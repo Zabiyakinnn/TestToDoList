@@ -13,6 +13,7 @@ class MainViewController: UIViewController {
     
     var taskCell = "taskCell"
     private var todos: [Todos] = []
+//    private var todosCoreData: [ToDoList] = []
     
 //    MARK: - Core Data
     
@@ -42,6 +43,68 @@ class MainViewController: UIViewController {
         }
         return container
     }()
+    
+//    сохранение данных в CoreData
+    private func saveTodosCoreData(_ todos: [Todos]) {
+        let context = persistentContainer.viewContext
+        
+        todos.forEach { todo in
+            let toDoEntity = ToDoList(context: context)
+            
+            toDoEntity.todo = todo.todo
+            toDoEntity.date = todo.date
+            toDoEntity.completed = todo.completed ?? true
+            toDoEntity.commentToDo = todo.commentToDo
+        }
+        
+        do {
+            try context.save()
+            print("Данные сохраненны в CoreData")
+        } catch {
+            print("Ошибка сохранения данных в CoreData \(error.localizedDescription)")
+        }
+    }
+    
+//    удаление задачи из CoreData
+    private func deleteTodosTaskCoreData(_ todos: Todos) {
+        let context = persistentContainer.viewContext
+        let fetchRequest: NSFetchRequest<ToDoList> = ToDoList.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "todo == %@", todos.todo ?? "")
+        
+        do {
+            let result = try context.fetch(fetchRequest)
+            if let taskToDelete = result.first {
+                context.delete(taskToDelete)
+                try context.save()
+            } else {
+                print("Задача не найденна в Core Data")
+            }
+        } catch {
+            print("Ошибка удаления задачи из CoreData: \(error)")
+        }
+    }
+    
+//    загрузка данных из CoreData
+    private func fetchTodosFromCoreData() -> [Todos]? {
+        let context = persistentContainer.viewContext
+        let fetchRequest: NSFetchRequest<ToDoList> = ToDoList.fetchRequest()
+        
+        do {
+            let coreDataTodos = try context.fetch(fetchRequest)
+//            конвертируем объекты из CoreDara в модель 'Todos'
+            return coreDataTodos.map { coreDataTodo in
+                Todos(
+                    todo: coreDataTodo.todo,
+                    completed: coreDataTodo.completed,
+                    commentToDo: coreDataTodo.commentToDo,
+                    date: coreDataTodo.date
+                )
+            }
+        } catch {
+            print("Ошибка загрузки данных из Core Dara: \(error.localizedDescription)")
+            return nil
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -116,13 +179,22 @@ class MainViewController: UIViewController {
         return tableView
     }()
     
+//    MARK: - Methods
+//    Network
     private func request() {
-        NetworkService.shared.requestToDoList { [weak self] todos in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                self.todos = todos
-                self.updateTaskCountLabel()
-                self.tableView.reloadData()
+        if let coreDataTodos = fetchTodosFromCoreData(), !coreDataTodos.isEmpty {
+            self.todos = coreDataTodos
+            self.updateTaskCountLabel()
+            self.tableView.reloadData()
+        } else {
+            NetworkService.shared.requestToDoList { [weak self] todos in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.todos = todos
+                    self.saveTodosCoreData(todos)
+                    self.updateTaskCountLabel()
+                    self.tableView.reloadData()
+                }
             }
         }
     }
@@ -136,6 +208,7 @@ extension MainViewController {
         
         tableView.delegate = self
         tableView.dataSource = self
+        
     }
     
     private func prepereView() {
@@ -166,7 +239,7 @@ extension MainViewController {
         tableView.snp.makeConstraints { make in
             make.top.equalTo(view.snp.top).inset(140)
             make.left.right.equalTo(view).inset(0)
-            make.bottom.equalTo(buttomView.snp.top).inset(0)
+            make.bottom.equalTo(buttomView.snp.bottom).inset(83)
         }
     }
 }
@@ -190,6 +263,24 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         return UITableView.automaticDimension
     }
-}
+    
+    
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            let taskToDelete = todos[indexPath.row]
+            todos.remove(at: indexPath.row)
+            deleteTodosTaskCoreData(taskToDelete)
+            updateTaskCountLabel()
 
+            tableView.beginUpdates()
+            tableView.deleteRows(at: [indexPath], with: .fade)
+            tableView.endUpdates()
+        }
+    }
+    
+}
 

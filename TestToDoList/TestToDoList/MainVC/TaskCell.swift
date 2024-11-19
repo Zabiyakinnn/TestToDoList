@@ -16,6 +16,9 @@ final class TaskCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         contentView.backgroundColor = .black
         setupLoyout()
+        
+        let interaction = UIContextMenuInteraction(delegate: self)
+        self.addInteraction(interaction)
     }
     
     required init?(coder: NSCoder) {
@@ -28,6 +31,7 @@ final class TaskCell: UITableViewCell {
         label.textColor = .white
         label.font = UIFont.systemFont(ofSize: 19, weight: .medium)
         label.numberOfLines = 2
+        label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
@@ -101,6 +105,34 @@ extension TaskCell {
             make.left.equalTo(contentView.snp.left).inset(50)
             make.top.equalTo(commentLabel.snp.bottom).inset(-7)
             make.bottom.equalTo(contentView.snp.bottom).inset(10)
+        }
+    }
+}
+
+extension TaskCell: UIContextMenuInteractionDelegate {
+    
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ -> UIMenu in
+            let editAction = UIAction(
+                title: "Редактировать",
+                image: UIImage(systemName: "square.and.pencil")
+            ) { _ in
+                    print("Редактировать")
+                }
+            let shareAction = UIAction(
+                title: "Поделиться",
+                image: UIImage(systemName: "square.and.arrow.up")
+            ) { _ in
+                    print("Поделиться")
+                }
+            let trashAction = UIAction(
+                title: "Удалить",
+                image: UIImage(systemName: "trash")
+            ) { _ in
+                    print("Удалить")
+                }
+            return UIMenu(title: "", children: [editAction, shareAction, trashAction])
         }
     }
 }
