@@ -70,6 +70,7 @@ final class TaskCell: UITableViewCell {
     @objc func statusButtonTapped() {
         statusButton.isSelected.toggle()
         onStatusChange?(statusButton.isSelected)
+        updateToDoLabel(isCompleted: statusButton.isSelected)
     }
     
     func configure(_ todos: Todos) {
@@ -78,6 +79,32 @@ final class TaskCell: UITableViewCell {
         commentLabel.text = todos.commentToDo ?? "Your comment"
         formatter.dateFormat = "dd/MM/yy"
         dateTodoLabel.text = formatter.string(from: todos.date ?? Date())
+        updateToDoLabel(isCompleted: statusButton.isSelected)
+    }
+    
+//    метод обновления текса в зависимости от состояния  задачи (выполненно/ не выполненно)
+    private func updateToDoLabel(isCompleted: Bool) {
+        if isCompleted {
+//            задача заверешена
+            let attributedString = NSAttributedString(
+                string: todoLabel.text ?? "",
+                attributes: [
+                    .strikethroughStyle: NSUnderlineStyle.single.rawValue,
+                    .foregroundColor: UIColor.gray
+                ]
+            )
+            todoLabel.attributedText = attributedString
+        } else {
+//            задача не заверешена
+            let attrattributedString = NSAttributedString(
+                string: todoLabel.text ?? "",
+                attributes: [
+                    .strikethroughStyle: 0,
+                    .foregroundColor: UIColor(named: "ColorTextBlackAndWhite") ?? UIColor.gray
+                ]
+            )
+            todoLabel.attributedText = attrattributedString
+        }
     }
 }
 
