@@ -10,6 +10,9 @@
 		B28B075266D3381B4874686A /* Pods_TestToDoList.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E45C179DDF590D16DD52E50 /* Pods_TestToDoList.framework */; };
 		C21BFA3D2CE8D2DC0084CC9F /* ToDoList.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = C21BFA3B2CE8D2DC0084CC9F /* ToDoList.xcdatamodeld */; };
 		C21BFA422CE8D37A0084CC9F /* ToDoList+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21BFA402CE8D37A0084CC9F /* ToDoList+CoreDataProperties.swift */; };
+		C21BFA452CEC96AE0084CC9F /* NewTaskViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21BFA442CEC96AE0084CC9F /* NewTaskViewController.swift */; };
+		C21BFA482CED01C00084CC9F /* EditTaskViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21BFA472CED01BF0084CC9F /* EditTaskViewController.swift */; };
+		C21BFA4B2CEDFC6D0084CC9F /* NotificationUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21BFA4A2CEDFC6D0084CC9F /* NotificationUtils.swift */; };
 		C22AFA782CE757BF00C4CF67 /* TaskCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22AFA772CE757BF00C4CF67 /* TaskCell.swift */; };
 		C22AFA7B2CE75FE000C4CF67 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22AFA7A2CE75FE000C4CF67 /* NetworkService.swift */; };
 		C22AFA7D2CE7604600C4CF67 /* Todos.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22AFA7C2CE7604600C4CF67 /* Todos.swift */; };
@@ -26,6 +29,9 @@
 		A5AF34E47E0239C82D78B0B1 /* Pods-TestToDoList.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TestToDoList.release.xcconfig"; path = "Target Support Files/Pods-TestToDoList/Pods-TestToDoList.release.xcconfig"; sourceTree = "<group>"; };
 		C21BFA3C2CE8D2DC0084CC9F /* ToDoList.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ToDoList.xcdatamodel; sourceTree = "<group>"; };
 		C21BFA402CE8D37A0084CC9F /* ToDoList+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ToDoList+CoreDataProperties.swift"; sourceTree = SOURCE_ROOT; };
+		C21BFA442CEC96AE0084CC9F /* NewTaskViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTaskViewController.swift; sourceTree = "<group>"; };
+		C21BFA472CED01BF0084CC9F /* EditTaskViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTaskViewController.swift; sourceTree = "<group>"; };
+		C21BFA4A2CEDFC6D0084CC9F /* NotificationUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationUtils.swift; sourceTree = "<group>"; };
 		C22AFA772CE757BF00C4CF67 /* TaskCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCell.swift; sourceTree = "<group>"; };
 		C22AFA7A2CE75FE000C4CF67 /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
 		C22AFA7C2CE7604600C4CF67 /* Todos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Todos.swift; sourceTree = "<group>"; };
@@ -75,6 +81,30 @@
 			path = ModelCoreData;
 			sourceTree = "<group>";
 		};
+		C21BFA432CEC967F0084CC9F /* NewTaskVC */ = {
+			isa = PBXGroup;
+			children = (
+				C21BFA442CEC96AE0084CC9F /* NewTaskViewController.swift */,
+			);
+			path = NewTaskVC;
+			sourceTree = "<group>";
+		};
+		C21BFA462CED019D0084CC9F /* EditTaskVC */ = {
+			isa = PBXGroup;
+			children = (
+				C21BFA472CED01BF0084CC9F /* EditTaskViewController.swift */,
+			);
+			path = EditTaskVC;
+			sourceTree = "<group>";
+		};
+		C21BFA492CEDFC5D0084CC9F /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				C21BFA4A2CEDFC6D0084CC9F /* NotificationUtils.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
 		C22AFA762CE757AE00C4CF67 /* MainVC */ = {
 			isa = PBXGroup;
 			children = (
@@ -114,11 +144,14 @@
 		C2D5D1E32CE6285200B08EC9 /* TestToDoList */ = {
 			isa = PBXGroup;
 			children = (
+				C21BFA492CEDFC5D0084CC9F /* Utilities */,
 				C2D5D1E42CE6285200B08EC9 /* AppDelegate.swift */,
 				C2D5D1E62CE6285200B08EC9 /* SceneDelegate.swift */,
 				C21BFA3E2CE8D3620084CC9F /* ModelCoreData */,
 				C22AFA792CE75FC300C4CF67 /* NetworkManager */,
 				C22AFA762CE757AE00C4CF67 /* MainVC */,
+				C21BFA432CEC967F0084CC9F /* NewTaskVC */,
+				C21BFA462CED019D0084CC9F /* EditTaskVC */,
 				C2D5D1ED2CE6285700B08EC9 /* Assets.xcassets */,
 				C2D5D1EF2CE6285700B08EC9 /* LaunchScreen.storyboard */,
 				C2D5D1F22CE6285700B08EC9 /* Info.plist */,
@@ -245,8 +278,11 @@
 				C22AFA782CE757BF00C4CF67 /* TaskCell.swift in Sources */,
 				C2D5D1E92CE6285200B08EC9 /* MainViewController.swift in Sources */,
 				C2D5D1E52CE6285200B08EC9 /* AppDelegate.swift in Sources */,
+				C21BFA452CEC96AE0084CC9F /* NewTaskViewController.swift in Sources */,
+				C21BFA4B2CEDFC6D0084CC9F /* NotificationUtils.swift in Sources */,
 				C2D5D1E72CE6285200B08EC9 /* SceneDelegate.swift in Sources */,
 				C22AFA7D2CE7604600C4CF67 /* Todos.swift in Sources */,
+				C21BFA482CED01C00084CC9F /* EditTaskViewController.swift in Sources */,
 				C21BFA3D2CE8D2DC0084CC9F /* ToDoList.xcdatamodeld in Sources */,
 				C21BFA422CE8D37A0084CC9F /* ToDoList+CoreDataProperties.swift in Sources */,
 			);

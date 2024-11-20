@@ -11,10 +11,13 @@ import SnapKit
 final class TaskCell: UITableViewCell {
     
     let formatter = DateFormatter()
+    var onStatusChange: ((Bool) -> Void)?
+    var onEditTaskVC: (() -> Void)?
+    var deleteTask: (() -> Void)?
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        contentView.backgroundColor = .black
+        contentView.backgroundColor = UIColor(named: "ColorViewBlackAndWhite")
         setupLoyout()
         
         let interaction = UIContextMenuInteraction(delegate: self)
@@ -28,7 +31,7 @@ final class TaskCell: UITableViewCell {
 //    todoLabel
     private lazy var todoLabel: UILabel = {
         let label = UILabel()
-        label.textColor = .white
+        label.textColor = UIColor(named: "ColorTextBlackAndWhite")
         label.font = UIFont.systemFont(ofSize: 19, weight: .medium)
         label.numberOfLines = 2
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -38,7 +41,7 @@ final class TaskCell: UITableViewCell {
 //    commentToDo label
     private lazy var commentLabel: UILabel = {
         let label = UILabel()
-        label.textColor = .white
+        label.textColor = UIColor(named: "ColorTextBlackAndWhite")
         label.font = UIFont.systemFont(ofSize: 17, weight: .light)
         label.numberOfLines = 2
         return label
@@ -60,8 +63,14 @@ final class TaskCell: UITableViewCell {
         button.imageView?.layer.transform = CATransform3DMakeScale(1.3, 1.3, 1.3)
         button.imageView?.contentMode = .scaleAspectFit
         button.tintColor = UIColor.systemYellow
+        button.addTarget(self, action: #selector(statusButtonTapped), for: .touchUpInside)
         return button
     }()
+    
+    @objc func statusButtonTapped() {
+        statusButton.isSelected.toggle()
+        onStatusChange?(statusButton.isSelected)
+    }
     
     func configure(_ todos: Todos) {
         todoLabel.text = todos.todo
@@ -119,6 +128,7 @@ extension TaskCell: UIContextMenuInteractionDelegate {
                 image: UIImage(systemName: "square.and.pencil")
             ) { _ in
                     print("Редактировать")
+                self.onEditTaskVC?()
                 }
             let shareAction = UIAction(
                 title: "Поделиться",
@@ -131,6 +141,7 @@ extension TaskCell: UIContextMenuInteractionDelegate {
                 image: UIImage(systemName: "trash")
             ) { _ in
                     print("Удалить")
+                self.deleteTask?()
                 }
             return UIMenu(title: "", children: [editAction, shareAction, trashAction])
         }

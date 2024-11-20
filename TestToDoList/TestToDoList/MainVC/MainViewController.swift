@@ -13,7 +13,7 @@ class MainViewController: UIViewController {
     
     var taskCell = "taskCell"
     private var todos: [Todos] = []
-//    private var todosCoreData: [ToDoList] = []
+    private var filtredTodo: [Todos] = []
     
 //    MARK: - Core Data
     
@@ -24,29 +24,20 @@ class MainViewController: UIViewController {
         
         let fetchResultController = NSFetchedResultsController(
             fetchRequest: fetchRequest,
-            managedObjectContext: self.persistentContainer.viewContext,
+            managedObjectContext: appDelegate.persistentContainer.viewContext,
             sectionNameKeyPath: nil,
             cacheName: nil
         )
         return fetchResultController
     }()
     
-    lazy var persistentContainer: NSPersistentContainer = {
-        let container = NSPersistentContainer(name: "ToDoList")
-        container.loadPersistentStores { description, error in
-            if let error = error as NSError? {
-                print("Error loading persistent store: \(error.localizedDescription)")
-                print("Details: \(error), \(error.userInfo)")
-            } else {
-                print("DB url - \(description.url?.absoluteString ?? "")")
-            }
-        }
-        return container
-    }()
+    private var appDelegate: AppDelegate {
+        return UIApplication.shared.delegate as! AppDelegate
+    }
     
 //    сохранение данных в CoreData
     private func saveTodosCoreData(_ todos: [Todos]) {
-        let context = persistentContainer.viewContext
+        let context = appDelegate.persistentContainer.viewContext
         
         todos.forEach { todo in
             let toDoEntity = ToDoList(context: context)
@@ -67,7 +58,7 @@ class MainViewController: UIViewController {
     
 //    удаление задачи из CoreData
     private func deleteTodosTaskCoreData(_ todos: Todos) {
-        let context = persistentContainer.viewContext
+        let context = appDelegate.persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<ToDoList> = ToDoList.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "todo == %@", todos.todo ?? "")
         
@@ -86,7 +77,7 @@ class MainViewController: UIViewController {
     
 //    загрузка данных из CoreData
     private func fetchTodosFromCoreData() -> [Todos]? {
-        let context = persistentContainer.viewContext
+        let context = appDelegate.persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<ToDoList> = ToDoList.fetchRequest()
         
         do {
@@ -106,9 +97,33 @@ class MainViewController: UIViewController {
         }
     }
     
+//    изменение статуса задачи (выполненно/не выполненно)
+    private func updateTaskStatus(at indexPath: IndexPath, newStatus: Bool) {
+        todos[indexPath.row].completed = newStatus
+        if isFiltering {
+            filtredTodo[indexPath.row].completed = newStatus
+        }
+        
+        let context = appDelegate.persistentContainer.viewContext
+        let fetchRequest: NSFetchRequest<ToDoList> = ToDoList.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "todo == %@", todos[indexPath.row].todo ?? "")
+        
+        do {
+            let result = try context.fetch(fetchRequest)
+            if let taskToUpdate = result.first {
+                taskToUpdate.completed = newStatus
+                try context.save()
+                print("Статус задачи изменен и сохранен в Core Data")
+            }
+        } catch {
+            print("Ошибка сохранени статуса азадачи в Core Data: \(error.localizedDescription)")
+        }
+        tableView.reloadRows(at: [indexPath], with: .none)
+   }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .black
+        view.backgroundColor = UIColor(named: "ColorViewBlackAndWhite")
         setupLoyout()
         request()
         
@@ -118,7 +133,7 @@ class MainViewController: UIViewController {
 //    заголовок
     private lazy var labelHeadline: UILabel = {
        let label = UILabel()
-        label.textColor = .white
+        label.textColor = UIColor(named: "ColorTextBlackAndWhite")
         label.font = UIFont.systemFont(ofSize: 34, weight: .bold)
         label.text = "Задачи"
         label.textAlignment = .left
@@ -129,10 +144,12 @@ class MainViewController: UIViewController {
     private lazy var searchBar: UISearchController = {
        let searchBar = UISearchController(searchResultsController: nil)
         searchBar.obscuresBackgroundDuringPresentation = false
+        searchBar.searchResultsUpdater = self
         searchBar.searchBar.placeholder = "Search"
         searchBar.searchBar.searchTextField.leftView?.tintColor = .lightGray
         searchBar.searchBar.searchTextField.textColor = .lightGray
-        searchBar.searchBar.searchTextField.backgroundColor = UIColor.darkGray
+        searchBar.searchBar.searchTextField.backgroundColor = UIColor(named: "ColorViewBlackAndWhite")
+        navigationItem.searchController = searchBar
         navigationItem.hidesSearchBarWhenScrolling = false
         return searchBar
     }()
@@ -140,7 +157,7 @@ class MainViewController: UIViewController {
 //    UIView
     private lazy var buttomView: UIView = {
        let view = UIView()
-        view.backgroundColor = UIColor.darkGray
+        view.backgroundColor = UIColor(named: "ColorIViewCountTask")
         return view
     }()
     
@@ -154,7 +171,12 @@ class MainViewController: UIViewController {
     }()
     
     @objc func buttonNewTaskTapped() {
-        print("buttonNewTask tapped")
+        let newTaskVC = NewTaskViewController()
+        newTaskVC.newToDo = { [weak self] in
+            guard let self = self else { return }
+            request()
+        }
+        navigationController?.pushViewController(newTaskVC, animated: true)
     }
     
 //    label count task
@@ -172,7 +194,7 @@ class MainViewController: UIViewController {
 //    tableView
     private lazy var tableView: UITableView = {
         let tableView = UITableView(frame: CGRect.zero, style: .plain)
-        tableView.backgroundColor = .black
+        tableView.backgroundColor = UIColor(named: "ColorViewBlackAndWhite")
         tableView.separatorColor = .gray
         tableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         tableView.register(TaskCell.self, forCellReuseIdentifier: "taskCell")
@@ -219,6 +241,7 @@ extension MainViewController {
         buttomView.addSubview(labelCountTask)
         self.navigationItem.titleView = labelHeadline
         self.navigationItem.searchController = searchBar
+        
     }
     
     private func setupeConstraint() {
@@ -244,18 +267,84 @@ extension MainViewController {
     }
 }
 
+//MARK: - UISearchResultsUpdating
+extension MainViewController: UISearchResultsUpdating {
+    
+    func updateSearchResults(for searchController: UISearchController) {
+        guard let searchText = searchController.searchBar.text, !searchText.isEmpty else {
+//            если текст пустой
+            filtredTodo = todos
+            tableView.reloadData()
+            return
+        }
+//        фильтрация массива
+        filtredTodo = todos.filter { todo in
+            (todo.todo?.lowercased().contains(searchText.lowercased()) ?? false) ||
+            (todo.commentToDo?.lowercased().contains(searchText.lowercased()) ?? false)
+        }
+        tableView.reloadData()
+    }
+}
+
 //MARK: - UITableViewDelegate, UITableViewDataSource
 extension MainViewController: UITableViewDelegate, UITableViewDataSource {
+//    филтр для полиска по массиву searchBar
+    var isFiltering: Bool {
+        return searchBar.isActive && !(searchBar.searchBar.text?.isEmpty ?? true)
+    }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return todos.count
+        return isFiltering ? filtredTodo.count : todos.count
     }
     
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: taskCell, for: indexPath) as? TaskCell
-        let todoList = todos[indexPath.row]
+        let todoList = isFiltering ? filtredTodo[indexPath.row] : todos[indexPath.row]
         cell?.configure(todoList)
+        
+        cell?.onStatusChange = { [weak self] newStatus in
+            guard let self = self else { return }
+            self.updateTaskStatus(at: indexPath, newStatus: newStatus)
+        }
+        
+        cell?.onEditTaskVC = { [weak self] in
+            guard let self = self else { return }
+            let editTaskVC = EditTaskViewController()
+            let selectedTask = isFiltering ? filtredTodo[indexPath.row] : todos[indexPath.row]
+            
+            
+            let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+            let fetchRequest: NSFetchRequest<ToDoList> = ToDoList.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "todo == %@", selectedTask.todo ?? "")
+            
+            do {
+                let results = try context.fetch(fetchRequest)
+                editTaskVC.todosCoreData = results.first
+            } catch {
+                print("Ошибка получения объекта Core Data: \(error.localizedDescription)")
+            }
+            
+            editTaskVC.editTask = { [weak self] in
+                guard let self = self else { return }
+                request()
+            }
+            
+            editTaskVC.todos = selectedTask
+            navigationController?.pushViewController(editTaskVC, animated: true)
+        }
+        
+        cell?.deleteTask = { [weak self] in
+            guard let self = self else { return }
+            let taskToDelete = todos[indexPath.row]
+            todos.remove(at: indexPath.row)
+            deleteTodosTaskCoreData(taskToDelete)
+            updateTaskCountLabel()
+            
+            tableView.beginUpdates()
+            tableView.deleteRows(at: [indexPath], with: .fade)
+            tableView.endUpdates()
+        }
         
         return cell ?? UITableViewCell()
     }
@@ -264,23 +353,47 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
         return UITableView.automaticDimension
     }
     
-    
     func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         return true
     }
     
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let editTaskVC = EditTaskViewController()
+        let selectedTask = isFiltering ? filtredTodo[indexPath.row] : todos[indexPath.row]
+        
+//        получение объекта Core Data
+        let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+        let fetchRequest: NSFetchRequest<ToDoList> = ToDoList.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "todo == %@", selectedTask.todo ?? "")
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            editTaskVC.todosCoreData = results.first
+        } catch {
+            print("Ошибка получения объекта Core Data: \(error.localizedDescription)")
+        }
+        editTaskVC.editTask = { [weak self] in
+            guard let self = self else { return }
+            request()
+        }
+        
+        editTaskVC.todos = selectedTask
+        navigationController?.pushViewController(editTaskVC, animated: true)
+    }
+    
+//    delete
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             let taskToDelete = todos[indexPath.row]
             todos.remove(at: indexPath.row)
             deleteTodosTaskCoreData(taskToDelete)
             updateTaskCountLabel()
-
+            
             tableView.beginUpdates()
             tableView.deleteRows(at: [indexPath], with: .fade)
             tableView.endUpdates()
         }
     }
-    
 }
 
