@@ -9,115 +9,21 @@ import UIKit
 import SnapKit
 import CoreData
 
-class MainViewController: UIViewController {
+final class MainViewController: UIViewController {
     
     var taskCell = "taskCell"
     private var todos: [Todos] = []
     private var filtredTodo: [Todos] = []
     
 //    MARK: - Core Data
-    
-    private lazy var fetchResultController: NSFetchedResultsController<ToDoList> = {
-        let fetchRequest = ToDoList.fetchRequest()
-        let sortDescriptor = NSSortDescriptor(key: "date", ascending: true)
-        fetchRequest.sortDescriptors = [sortDescriptor]
-        
-        let fetchResultController = NSFetchedResultsController(
-            fetchRequest: fetchRequest,
-            managedObjectContext: appDelegate.persistentContainer.viewContext,
-            sectionNameKeyPath: nil,
-            cacheName: nil
-        )
-        return fetchResultController
-    }()
-    
-    private var appDelegate: AppDelegate {
-        return UIApplication.shared.delegate as! AppDelegate
-    }
-    
-//    сохранение данных в CoreData
-    private func saveTodosCoreData(_ todos: [Todos]) {
-        let context = appDelegate.persistentContainer.viewContext
-        
-        todos.forEach { todo in
-            let toDoEntity = ToDoList(context: context)
-            
-            toDoEntity.todo = todo.todo
-            toDoEntity.date = todo.date
-            toDoEntity.completed = todo.completed ?? true
-            toDoEntity.commentToDo = todo.commentToDo
-        }
-        
-        do {
-            try context.save()
-            print("Данные сохраненны в CoreData")
-        } catch {
-            print("Ошибка сохранения данных в CoreData \(error.localizedDescription)")
-        }
-    }
-    
-//    удаление задачи из CoreData
-    private func deleteTodosTaskCoreData(_ todos: Todos) {
-        let context = appDelegate.persistentContainer.viewContext
-        let fetchRequest: NSFetchRequest<ToDoList> = ToDoList.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "todo == %@", todos.todo ?? "")
-        
-        do {
-            let result = try context.fetch(fetchRequest)
-            if let taskToDelete = result.first {
-                context.delete(taskToDelete)
-                try context.save()
-            } else {
-                print("Задача не найденна в Core Data")
-            }
-        } catch {
-            print("Ошибка удаления задачи из CoreData: \(error)")
-        }
-    }
-    
-//    загрузка данных из CoreData
-    private func fetchTodosFromCoreData() -> [Todos]? {
-        let context = appDelegate.persistentContainer.viewContext
-        let fetchRequest: NSFetchRequest<ToDoList> = ToDoList.fetchRequest()
-        
-        do {
-            let coreDataTodos = try context.fetch(fetchRequest)
-//            конвертируем объекты из CoreDara в модель 'Todos'
-            return coreDataTodos.map { coreDataTodo in
-                Todos(
-                    todo: coreDataTodo.todo,
-                    completed: coreDataTodo.completed,
-                    commentToDo: coreDataTodo.commentToDo,
-                    date: coreDataTodo.date
-                )
-            }
-        } catch {
-            print("Ошибка загрузки данных из Core Dara: \(error.localizedDescription)")
-            return nil
-        }
-    }
-    
 //    изменение статуса задачи (выполненно/не выполненно)
     private func updateTaskStatus(at indexPath: IndexPath, newStatus: Bool) {
+        let taskName = todos[indexPath.row].todo ?? ""
         todos[indexPath.row].completed = newStatus
         if isFiltering {
             filtredTodo[indexPath.row].completed = newStatus
         }
-        
-        let context = appDelegate.persistentContainer.viewContext
-        let fetchRequest: NSFetchRequest<ToDoList> = ToDoList.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "todo == %@", todos[indexPath.row].todo ?? "")
-        
-        do {
-            let result = try context.fetch(fetchRequest)
-            if let taskToUpdate = result.first {
-                taskToUpdate.completed = newStatus
-                try context.save()
-                print("Статус задачи изменен и сохранен в Core Data")
-            }
-        } catch {
-            print("Ошибка сохранени статуса азадачи в Core Data: \(error.localizedDescription)")
-        }
+        CoreDataManager.shared.updateTaskStatus(todo: taskName, newStatus: newStatus)
         tableView.reloadRows(at: [indexPath], with: .none)
    }
     
@@ -144,7 +50,7 @@ class MainViewController: UIViewController {
     private lazy var searchBar: UISearchController = {
        let searchBar = UISearchController(searchResultsController: nil)
         searchBar.obscuresBackgroundDuringPresentation = false
-        searchBar.searchResultsUpdater = self
+//        searchBar.searchResultsUpdater = self
         searchBar.searchBar.placeholder = "Search"
         searchBar.searchBar.searchTextField.leftView?.tintColor = .lightGray
         searchBar.searchBar.searchTextField.textColor = .lightGray
@@ -204,7 +110,7 @@ class MainViewController: UIViewController {
 //    MARK: - Methods
 //    Network
     private func request() {
-        if let coreDataTodos = fetchTodosFromCoreData(), !coreDataTodos.isEmpty {
+        if let coreDataTodos = CoreDataManager.shared.fetchTodosFromCoreData(), !coreDataTodos.isEmpty {
             self.todos = coreDataTodos
             self.updateTaskCountLabel()
             self.tableView.reloadData()
@@ -213,7 +119,7 @@ class MainViewController: UIViewController {
                 DispatchQueue.main.async {
                     guard let self = self else { return }
                     self.todos = todos
-                    self.saveTodosCoreData(todos)
+                    CoreDataManager.shared.saveTodosCoreData(todos)
                     self.updateTaskCountLabel()
                     self.tableView.reloadData()
                 }
@@ -227,7 +133,7 @@ extension MainViewController {
     private func setupLoyout() {
         prepereView()
         setupeConstraint()
-        
+                
         tableView.delegate = self
         tableView.dataSource = self
         
@@ -241,7 +147,7 @@ extension MainViewController {
         buttomView.addSubview(labelCountTask)
         self.navigationItem.titleView = labelHeadline
         self.navigationItem.searchController = searchBar
-        
+
     }
     
     private func setupeConstraint() {
@@ -284,6 +190,10 @@ extension MainViewController: UISearchResultsUpdating {
         }
         tableView.reloadData()
     }
+}
+
+extension MainViewController {
+    
 }
 
 //MARK: - UITableViewDelegate, UITableViewDataSource
@@ -338,7 +248,7 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
             guard let self = self else { return }
             let taskToDelete = todos[indexPath.row]
             todos.remove(at: indexPath.row)
-            deleteTodosTaskCoreData(taskToDelete)
+            CoreDataManager.shared.deleteTodosTaskCoreData(taskToDelete)
             updateTaskCountLabel()
             
             tableView.beginUpdates()
@@ -387,7 +297,7 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
         if editingStyle == .delete {
             let taskToDelete = todos[indexPath.row]
             todos.remove(at: indexPath.row)
-            deleteTodosTaskCoreData(taskToDelete)
+            CoreDataManager.shared.deleteTodosTaskCoreData(taskToDelete)
             updateTaskCountLabel()
             
             tableView.beginUpdates()

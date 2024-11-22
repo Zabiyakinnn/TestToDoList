@@ -13,6 +13,7 @@
 		C21BFA452CEC96AE0084CC9F /* NewTaskViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21BFA442CEC96AE0084CC9F /* NewTaskViewController.swift */; };
 		C21BFA482CED01C00084CC9F /* EditTaskViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21BFA472CED01BF0084CC9F /* EditTaskViewController.swift */; };
 		C21BFA4B2CEDFC6D0084CC9F /* NotificationUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21BFA4A2CEDFC6D0084CC9F /* NotificationUtils.swift */; };
+		C21BFA4F2CEF3F070084CC9F /* CoreDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21BFA4E2CEF3F070084CC9F /* CoreDataManager.swift */; };
 		C22AFA782CE757BF00C4CF67 /* TaskCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22AFA772CE757BF00C4CF67 /* TaskCell.swift */; };
 		C22AFA7B2CE75FE000C4CF67 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22AFA7A2CE75FE000C4CF67 /* NetworkService.swift */; };
 		C22AFA7D2CE7604600C4CF67 /* Todos.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22AFA7C2CE7604600C4CF67 /* Todos.swift */; };
@@ -32,6 +33,7 @@
 		C21BFA442CEC96AE0084CC9F /* NewTaskViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTaskViewController.swift; sourceTree = "<group>"; };
 		C21BFA472CED01BF0084CC9F /* EditTaskViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTaskViewController.swift; sourceTree = "<group>"; };
 		C21BFA4A2CEDFC6D0084CC9F /* NotificationUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationUtils.swift; sourceTree = "<group>"; };
+		C21BFA4E2CEF3F070084CC9F /* CoreDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataManager.swift; sourceTree = "<group>"; };
 		C22AFA772CE757BF00C4CF67 /* TaskCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCell.swift; sourceTree = "<group>"; };
 		C22AFA7A2CE75FE000C4CF67 /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
 		C22AFA7C2CE7604600C4CF67 /* Todos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Todos.swift; sourceTree = "<group>"; };
@@ -77,6 +79,7 @@
 			isa = PBXGroup;
 			children = (
 				C21BFA402CE8D37A0084CC9F /* ToDoList+CoreDataProperties.swift */,
+				C21BFA4E2CEF3F070084CC9F /* CoreDataManager.swift */,
 			);
 			path = ModelCoreData;
 			sourceTree = "<group>";
@@ -280,6 +283,7 @@
 				C2D5D1E52CE6285200B08EC9 /* AppDelegate.swift in Sources */,
 				C21BFA452CEC96AE0084CC9F /* NewTaskViewController.swift in Sources */,
 				C21BFA4B2CEDFC6D0084CC9F /* NotificationUtils.swift in Sources */,
+				C21BFA4F2CEF3F070084CC9F /* CoreDataManager.swift in Sources */,
 				C2D5D1E72CE6285200B08EC9 /* SceneDelegate.swift in Sources */,
 				C22AFA7D2CE7604600C4CF67 /* Todos.swift in Sources */,
 				C21BFA482CED01C00084CC9F /* EditTaskViewController.swift in Sources */,

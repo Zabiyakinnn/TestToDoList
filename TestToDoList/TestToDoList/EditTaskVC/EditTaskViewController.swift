@@ -24,7 +24,9 @@ final class EditTaskViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = UIColor(named: "ColorViewBlackAndWhite")
         title = "Редактирование задачи"
-        self.navigationController?.navigationBar.titleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.black]
+        self.navigationController?.navigationBar.titleTextAttributes = [
+            NSAttributedString.Key.foregroundColor: UIColor(named: "ColorTextBlackAndWhite") ?? UIColor.lightGray
+        ]
         setupLoyout()
     }
     
@@ -48,7 +50,7 @@ final class EditTaskViewController: UIViewController {
         view.font = UIFont.systemFont(ofSize: 15, weight: .regular)
         view.backgroundColor = UIColor.clear
         view.textColor = UIColor(named: "ColorTextBlackAndWhite")
-        view.text = todos?.commentToDo
+        view.text = todos?.commentToDo ?? "Ваш коментарий"
         return view
     }()
     
@@ -86,34 +88,35 @@ final class EditTaskViewController: UIViewController {
     
 //    сохранение задачи в Core Data
     @objc func rightButtonItemTapped() {
-        if textViewNameToDo.hasText && textViewCommentToDo.hasText && dateOfDone != "dd/MM/yy" {
-            
-            let formatter = DateFormatter()
-            formatter.dateFormat = "dd/MM/yy"
-            
-            let appDelegate = UIApplication.shared.delegate as! AppDelegate
-            let context = appDelegate.persistentContainer.viewContext
-            
-//            проверяем существует ли уже todos
-            if let todosEdit = todosCoreData {
-//                print("Редактируем задачу \(todosEdit)")
-                todosEdit.todo = textViewNameToDo.text
-                todosEdit.commentToDo = textViewCommentToDo.text
-                todosEdit.date = formatter.date(from: dateOfDone)
-                todosEdit.completed = todosCoreData?.completed != nil
-                do {
-                    try context.save()
-                    self.editTask?()
-//                    print("Задача сохранена в Core Data \(todosEdit)")
-                    navigationController?.popViewController(animated: true)
-                } catch {
-                    print("Error \(error.localizedDescription)")
-                }
-            } else {
-                print("Не удалось найти задачу для редактирования")
-            }
-        } else {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yy"
+        
+        guard let todo = textViewNameToDo.text, !todo.isEmpty,
+              let commentToDo = textViewCommentToDo.text, !commentToDo.isEmpty,
+              let date = selectedDate else {
             showFields()
+            return
+        }
+        
+        if let todoEdit = todosCoreData {
+            CoreDataManager.shared.saveEditTask(
+                task: todoEdit,
+                todo: todo,
+                commentToDo: commentToDo,
+                date: date,
+                completed: todos?.completed ?? false) { [weak self] result in
+                    guard let self = self else { return }
+                    switch result {
+                    case .success():
+                        self.editTask?()
+                        self.navigationController?.popViewController(animated: true)
+                        print("Измененная задача сохранена в Core Data")
+                    case .failure(let error):
+                        print("Ошибка сохранения задачи в Core Data: \(error)")
+                    }
+                }
+        } else {
+            print("Не удалось найти задачу для редактирования")
         }
     }
     
@@ -174,7 +177,7 @@ extension EditTaskViewController {
         buttonDateToDo.snp.makeConstraints { make in
             make.top.equalTo(textViewNameToDo.snp.bottom).offset(10)
             make.left.equalTo(view.snp.left).inset(24)
-            make.width.equalTo(170)
+            make.width.equalTo(100)
             make.height.equalTo(35)
         }
         textViewCommentToDo.snp.makeConstraints { make in
@@ -204,3 +207,34 @@ extension EditTaskViewController: UICalendarSelectionSingleDateDelegate {
     
 }
 
+
+
+//if textViewNameToDo.hasText && textViewCommentToDo.hasText && dateOfDone != "dd/MM/yy" {
+//    
+//    let formatter = DateFormatter()
+//    formatter.dateFormat = "dd/MM/yy"
+//    
+//    let appDelegate = UIApplication.shared.delegate as! AppDelegate
+//    let context = appDelegate.persistentContainer.viewContext
+//    
+////            проверяем существует ли уже todos
+//    if let todosEdit = todosCoreData {
+////                print("Редактируем задачу \(todosEdit)")
+//        todosEdit.todo = textViewNameToDo.text
+//        todosEdit.commentToDo = textViewCommentToDo.text
+//        todosEdit.date = formatter.date(from: dateOfDone)
+//        todosEdit.completed = todosCoreData?.completed != nil
+//        do {
+//            try context.save()
+//            self.editTask?()
+////                    print("Задача сохранена в Core Data \(todosEdit)")
+//            navigationController?.popViewController(animated: true)
+//        } catch {
+//            print("Error \(error.localizedDescription)")
+//        }
+//    } else {
+//        print("Не удалось найти задачу для редактирования")
+//    }
+//} else {
+//    showFields()
+//}

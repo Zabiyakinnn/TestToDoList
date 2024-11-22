@@ -23,7 +23,9 @@ final class NewTaskViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = UIColor(named: "ColorViewBlackAndWhite")
         title = "Новая задача"
-        self.navigationController?.navigationBar.titleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.black]
+        self.navigationController?.navigationBar.titleTextAttributes = [
+            NSAttributedString.Key.foregroundColor: UIColor(named: "ColorTextBlackAndWhite") ?? UIColor.lightGray
+        ]
         setupLoyout()
     }
     
@@ -89,8 +91,6 @@ final class NewTaskViewController: UIViewController {
         button.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .regular)
         button.setTitle("Date", for: .normal)
         button.contentHorizontalAlignment = .left
-        button.titleEdgeInsets = UIEdgeInsets(top: 0, left: 28, bottom: 0, right: 0)
-        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 0)
         button.layer.cornerRadius = 8
         button.addTarget(self, action: #selector(buttonDateToDoTapped), for: .touchUpInside)
         return button
@@ -117,35 +117,26 @@ final class NewTaskViewController: UIViewController {
     
 //    сохранение задачи в Core Data
     @objc func rightButtonItemTapped() {
-        if textViewNameToDo.hasText && textViewCommentToDo.hasText && dateOfDone != "dd/MM/yy" {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "dd/MM/yy"
-            
-            let appDalegate = UIApplication.shared.delegate as! AppDelegate
-            let context = appDalegate.persistentContainer.viewContext
-            
-//            создаем новый объект todos
-            if todos == nil {
-                todos = ToDoList(context: context)
-            }
-            
-            todos?.todo = textViewNameToDo.text
-            todos?.commentToDo = textViewCommentToDo.text
-            todos?.date = formatter.date(from: dateOfDone)
-            todos?.completed = false
-            
-//            сохранение данных в Core Data
-            do {
-                try context.save()
-                self.newToDo?()
-                navigationController?.popViewController(animated: true)
-                print("Данные сохранены в Core Data")
-            } catch {
-                print("Ошибка при сохранении данных в Core Data \(error.localizedDescription)")
-            }
-        } else {
+        guard let todo = textViewNameToDo.text, !todo.isEmpty,
+              let commentToDo = textViewNameToDo.text, !commentToDo.isEmpty,
+              let date = selectedDate else {
             showFields()
+            return
         }
+        CoreDataManager.shared.saveNewTask(
+            todo: todo,
+            commentToDo: commentToDo,
+            date: date) { [weak self] result in
+                guard let self = self else { return }
+                switch result {
+                case .success():
+                    self.newToDo?()
+                    self.navigationController?.popViewController(animated: true)
+                    print("Новая задача сохраненна в Core Data")
+                case .failure(let error):
+                    print("Ошибка сохранения данных в Core Data: \(error.localizedDescription)")
+                }
+            }
     }
     
     //    скрытие клавиатуры
@@ -211,7 +202,7 @@ extension NewTaskViewController {
         buttonDateToDo.snp.makeConstraints { make in
             make.top.equalTo(dateLabel.snp.bottom).offset(10)
             make.left.equalTo(view.snp.left).inset(20)
-            make.width.equalTo(170)
+            make.width.equalTo(100)
             make.height.equalTo(35)
         }
     }
